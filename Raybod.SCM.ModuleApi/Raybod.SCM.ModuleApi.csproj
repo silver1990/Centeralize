@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Folder Include="Areas\DocumentManagment\Data\" />
+    <Folder Include="Areas\DocumentManagment\Models\" />
+    <Folder Include="Areas\DocumentManagment\Views\" />
+    <Folder Include="Areas\Financial\Controllers\" />
+    <Folder Include="Areas\Financial\Data\" />
+    <Folder Include="Areas\Financial\Models\" />
+    <Folder Include="Areas\Financial\Views\" />
+    <Folder Include="Areas\Purchase\Data\" />
+    <Folder Include="Areas\Purchase\Models\" />
+    <Folder Include="Areas\Purchase\Views\" />
+    <Folder Include="Areas\Sale\Data\" />
+    <Folder Include="Areas\Sale\Models\" />
+    <Folder Include="Areas\Sale\Views\" />
+    <Folder Include="Areas\SCMManagement\Data\" />
+    <Folder Include="Areas\SCMManagement\Models\" />
+    <Folder Include="Areas\SCMManagement\Views\" />
+    <Folder Include="Files\logs\" />
+    <Folder Include="Files\UploadDocument\aj11\Document\Transmittal\" />
+    <Folder Include="Files\UploadDocument\test-07\Document\33\Reviosin\43\" />
+    <Folder Include="Files\UploadDocument\test-07\Document\Transmittal\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.0.0" />
+     
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.0" />  
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />    
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />    
+    <PackageReference Include="Scrutor" Version="3.0.1" />    
+    <PackageReference Include="Serilog.AspNetCore" Version="3.4.0" />    
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.1.3" />    
+    <PackageReference Include="Serilog.Exceptions" Version="6.0.0" />    
+    <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />    
+    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="8.4.1" />    
+    <PackageReference Include="Serilog.Sinks.Email" Version="2.4.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0-rc4" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="5.5.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Raybod.SCM.DataAccess\Raybod.SCM.DataAccess.csproj" />
+    <ProjectReference Include="..\Raybod.SCM.DataTransferObject\Raybod.SCM.DataTransferObject.csproj" />
+    <ProjectReference Include="..\Raybod.SCM.Domain\Raybod.SCM.Domain.csproj" />
+    <ProjectReference Include="..\Raybod.SCM.Services\Raybod.SCM.Services.csproj" />
+    <ProjectReference Include="..\Raybod.SCM.Utility\Raybod.SCM.Utility.csproj" />
+  </ItemGroup>
+
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
+</Project>

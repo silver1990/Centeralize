@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20210221125726_v12.cs" />
+    <Compile Remove="Migrations\20210221125726_v12.Designer.cs" />
+    <Compile Remove="Migrations\20211009085519_inhence-national-id-length.cs" />
+    <Compile Remove="Migrations\20211009085519_inhence-national-id-length.Designer.cs" />
+    <Compile Remove="Migrations\20211212104450_v_40.cs" />
+    <Compile Remove="Migrations\20211212104450_v_40.Designer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFSecondLevelCache.Core" Version="2.9.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="3.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    
+  </ItemGroup>
+
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Raybod.SCM.Domain\Raybod.SCM.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
