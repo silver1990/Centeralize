@@ -58,7 +58,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public CommunicationNCRService(
@@ -69,6 +69,7 @@ namespace Raybod.SCM.Services.Implementation
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
             IAppEmailService appEmailService,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
@@ -77,7 +78,6 @@ namespace Raybod.SCM.Services.Implementation
             _appEmailService = appEmailService;
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _documentTQNCRRepository = _unitOfWork.Set<DocumentTQNCR>();
             _consultantRepository = _unitOfWork.Set<Consultant>();
@@ -90,6 +90,8 @@ namespace Raybod.SCM.Services.Implementation
             _pdfTemplateRepository = _unitOfWork.Set<PDFTemplate>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<bool>> AddCommunicationNCRAsync(AuthenticateDto authenticate, long revisionId, AddNCRDto model)

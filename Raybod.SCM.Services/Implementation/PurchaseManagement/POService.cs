@@ -43,7 +43,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly IFileService _fileService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public POService(
             IUnitOfWork unitOfWork,
@@ -53,6 +53,7 @@ namespace Raybod.SCM.Services.Implementation
             IPaymentService paymentService,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService)
         {
             _unitOfWork = unitOfWork;
@@ -61,7 +62,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _formConfigService = formConfigService;
-            _appSettings = appSettings.Value;
             _poRepository = _unitOfWork.Set<PO>();
             _poSubjectRepository = _unitOfWork.Set<POSubject>();
             _receiptRepository = _unitOfWork.Set<Receipt>();
@@ -69,6 +69,8 @@ namespace Raybod.SCM.Services.Implementation
             _pAttachmentRepository = _unitOfWork.Set<PAttachment>();
             _purchaseRequestItemRepository = _unitOfWork.Set<PurchaseRequestItem>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<POListBadgeDto> GetDashbourdPOListBadgeAsync(AuthenticateDto authenticate)

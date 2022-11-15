@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -30,24 +31,26 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<PO> _poRepository;
         private readonly DbSet<User> _userRepository;
         private readonly DbSet<POInspection> _inspectionRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
 
         public POInspectionService(IUnitOfWork unitOfWork, IWebHostEnvironment hostingEnvironmentRoot,
            ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService
             )
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _inspectionRepository = _unitOfWork.Set<POInspection>();
             _pAttachmentRepository = _unitOfWork.Set<PAttachment>();
             _userRepository = _unitOfWork.Set<User>();
             _poRepository = _unitOfWork.Set<PO>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<POInspectionDto>>> GetPoInspectionAsync (AuthenticateDto authenticate, long poId)

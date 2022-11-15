@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -33,7 +34,6 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly IContractFormConfigService _formConfigService;
         private readonly DbSet<WarehouseOutputRequest> _warehouseOutputRequestRepository;
-        private readonly DbSet<Warehouse> _WarehouseRepository;
         private readonly DbSet<ReceiptReject> _receiptRejectRepository;
         private readonly DbSet<WarehouseProduct> _warehouseProductRepository;
         private readonly DbSet<WarehouseProductStockLogs> _warehouseProductStockLogsRepository;
@@ -45,15 +45,15 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<Receipt> _receiptRepository;
         private readonly DbSet<ReceiptSubject> _receiptSubjectRepository;
         private readonly DbSet<PO> _poRepository;
-        private readonly DbSet<POSubject> _poSubjectRepository;
         private readonly DbSet<POStatusLog> _poStatusLogRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         public ReceiptService(
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService)
         {
@@ -61,7 +61,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _formConfigService = formConfigService;
-            _WarehouseRepository = _unitOfWork.Set<Warehouse>();
             _warehouseProductRepository = _unitOfWork.Set<WarehouseProduct>();
             _packRepository = _unitOfWork.Set<Pack>();
             _receiptRejectRepository = _unitOfWork.Set<ReceiptReject>();
@@ -73,12 +72,11 @@ namespace Raybod.SCM.Services.Implementation
             _receiptSubjectRepository = _unitOfWork.Set<ReceiptSubject>();
             _poRepository = _unitOfWork.Set<PO>();
             _mrpItemRepository = _unitOfWork.Set<MrpItem>();
-            _poSubjectRepository = _unitOfWork.Set<POSubject>();
             _poStatusLogRepository = _unitOfWork.Set<POStatusLog>();
-
-            _appSettings = appSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
-            _warehouseOutputRequestRepository = _unitOfWork.Set<WarehouseOutputRequest>(); ;
+            _warehouseOutputRequestRepository = _unitOfWork.Set<WarehouseOutputRequest>(); 
         }
 
         public async Task<ServiceResult<ReceiptBadgeNotificationDto>> GetReceiptWaitingBadgeCountAsync(AuthenticateDto authenticate)

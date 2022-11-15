@@ -60,7 +60,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<CommunicationAttachment> _communicationAttachmentRepository;
         private readonly DbSet<PDFTemplate> _pdfTemplateRepository;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public CommunicationTQService(
@@ -71,6 +71,7 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationServices,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
@@ -79,7 +80,6 @@ namespace Raybod.SCM.Services.Implementation
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
             _formConfigService = formConfigService;
-            _appSettings = appSettings.Value;
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _documentTQNCRRepository = _unitOfWork.Set<DocumentTQNCR>();
             _communicationQuestionRepository = _unitOfWork.Set<CommunicationQuestion>();
@@ -92,6 +92,8 @@ namespace Raybod.SCM.Services.Implementation
             _pdfTemplateRepository = _unitOfWork.Set<PDFTemplate>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<bool>> AddCommunicationTQAsync(AuthenticateDto authenticate, long revisionId, AddTQDto model)

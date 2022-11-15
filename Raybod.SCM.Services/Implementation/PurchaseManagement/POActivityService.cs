@@ -1,5 +1,6 @@
 ﻿using Exon.TheWeb.Service.Core;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -33,23 +34,25 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public POActivityService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationServices,
             ISCMLogAndNotificationService scmLogAndNotificationService)
         {
             _unitOfWork = unitOfWork;
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _userRepository = _unitOfWork.Set<User>();
             _poRepository = _unitOfWork.Set<PO>();
             _poActivityRepository = _unitOfWork.Set<POActivity>();
             _activityTimesheetRepository = _unitOfWork.Set<POActivityTimesheet>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         #region PO activity

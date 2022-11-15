@@ -58,7 +58,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public CommunicationCommentService(
@@ -68,6 +68,7 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationServices,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
+            IHttpContextAccessor httpContextAccessor,
             IAppEmailService appEmailService,
             IContractFormConfigService formConfigService, IViewRenderService viewRenderService)
         {
@@ -77,7 +78,6 @@ namespace Raybod.SCM.Services.Implementation
             _formConfigService = formConfigService;
             _appEmailService = appEmailService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _documentCommunicationRepository = _unitOfWork.Set<DocumentCommunication>();
             _communicationAttachmentRepository = _unitOfWork.Set<CommunicationAttachment>();
@@ -90,6 +90,8 @@ namespace Raybod.SCM.Services.Implementation
             _pdfTemplateRepository = _unitOfWork.Set<PDFTemplate>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<bool>> AddCommunicationCommentAsync(AuthenticateDto authenticate, long revisionId, AddCommunicationCommentDto model)

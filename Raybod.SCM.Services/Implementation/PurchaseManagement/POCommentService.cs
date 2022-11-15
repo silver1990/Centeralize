@@ -24,6 +24,7 @@ using Raybod.SCM.DataTransferObject.User;
 using Raybod.SCM.DataTransferObject.Email;
 using Raybod.SCM.DataTransferObject._PanelDocument.Communication.Comment;
 using Hangfire;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -39,12 +40,13 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<POComment> _poCommentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public POCommentService(IUnitOfWork unitOfWork, IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
@@ -52,13 +54,14 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _PAttachmentRepository = _unitOfWork.Set<PAttachment>();
             _poCommentRepository = _unitOfWork.Set<POComment>();
             _poRepository = _unitOfWork.Set<PO>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddPOCommentAsync(AuthenticateDto authenticate, long poId, PoCommentType commentType, AddPOCommentDto model)

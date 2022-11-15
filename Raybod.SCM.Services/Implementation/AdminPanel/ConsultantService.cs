@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Hangfire;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -37,7 +38,7 @@ namespace Raybod.SCM.Services.Implementation.AdminPanel
         private readonly DbSet<CompanyUser> _companyUserRepository;
         private readonly DbSet<Contract> _contractRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
         private readonly IAppEmailService _appEmailService;
         private readonly DbSet<TeamWorkUser> _teamWorkUsersRepository;
@@ -45,9 +46,9 @@ namespace Raybod.SCM.Services.Implementation.AdminPanel
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
+            IHttpContextAccessor httpContextAccessor,
             IOptions<CompanyAppSettingsDto> appSettings, IViewRenderService viewRenderService, IAppEmailService appEmailService)
         {
-            _appSettings = appSettings.Value;
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _consultantRepository = _unitOfWork.Set<Consultant>();
@@ -58,6 +59,8 @@ namespace Raybod.SCM.Services.Implementation.AdminPanel
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _viewRenderService = viewRenderService;
             _appEmailService = appEmailService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<BaseConsultantDto>> AddConsultantAsync(AuthenticateDto authenticate, AddConsultantDto model)

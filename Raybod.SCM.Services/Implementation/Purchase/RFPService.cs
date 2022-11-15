@@ -1,28 +1,26 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
+using Raybod.SCM.DataAccess.Extention;
 using Raybod.SCM.DataTransferObject;
+using Raybod.SCM.DataTransferObject.Audit;
+using Raybod.SCM.DataTransferObject.Notification;
 using Raybod.SCM.DataTransferObject.RFP;
+using Raybod.SCM.DataTransferObject.Supplier;
 using Raybod.SCM.Domain.Enum;
 using Raybod.SCM.Domain.Model;
+using Raybod.SCM.Domain.Struct;
 using Raybod.SCM.Services.Core;
 using Raybod.SCM.Services.Core.Common;
 using Raybod.SCM.Services.Core.Common.Message;
+using Raybod.SCM.Services.Utilitys.MailService;
 using Raybod.SCM.Utility.Extention;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Raybod.SCM.Services.Utilitys.MailService;
-using Raybod.SCM.DataAccess.Extention;
-using Raybod.SCM.Domain.Struct;
-using Raybod.SCM.DataTransferObject.Audit;
-using Raybod.SCM.DataTransferObject.Notification;
-using Raybod.SCM.DataTransferObject.Supplier;
-using Raybod.SCM.Utility.Common;
-using Raybod.SCM.Utility.EnumType;
-using Raybod.SCM.DataTransferObject.RFP.RFPComment;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -47,7 +45,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<RFPComment> _rfpCommentRepository;
         private readonly DbSet<PurchaseRequest> _purchaseRequestRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public RFPService(
             IUnitOfWork unitOfWork,
@@ -56,13 +54,13 @@ namespace Raybod.SCM.Services.Implementation
             IOptions<CompanyAppSettingsDto> appSettings,
             IAppEmailService appEmailService,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _formConfigService = formConfigService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _supplierRepository = _unitOfWork.Set<Supplier>();
             _mrpItemRepository = _unitOfWork.Set<MrpItem>();
@@ -78,6 +76,8 @@ namespace Raybod.SCM.Services.Implementation
             _rfpStatusLogRepository = _unitOfWork.Set<RFPStatusLog>();
             _rfpItemRepository = _unitOfWork.Set<RFPItems>();
             _rfpInqueryRepository = _unitOfWork.Set<RFPInquery>();
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<RFPListBadgeCountDto> GetDashbourdRFPListBadgeCountAsync(AuthenticateDto authenticate)
@@ -1366,8 +1366,8 @@ namespace Raybod.SCM.Services.Implementation
                    .ThenInclude(a => a.RFPSupplierProposals)
                    .Include(a => a.RFPInqueries)
                    .Include(a => a.RFPStatusLogs)
-                   .Include(a=>a.RFPSuppliers)
-                   .ThenInclude(a=>a.RFPProFormas)
+                   .Include(a => a.RFPSuppliers)
+                   .ThenInclude(a => a.RFPProFormas)
                   .AsQueryable();
 
                 if (permission.ProductGroupIds.Any() && !dbQuery.Any(c => permission.ProductGroupIds.Contains(c.ProductGroupId)))
@@ -1442,8 +1442,8 @@ namespace Raybod.SCM.Services.Implementation
                                : s.RFPSupplierProposals.Any(a => !a.RFPSupplier.IsDeleted && a.RFPSupplier.IsActive && !a.IsDeleted && a.IsAnswered && !a.IsEvaluated && !a.RFPInquery.IsDeleted && a.RFPInquery.RFPInqueryType == RFPInqueryType.CommercialInquery)
                                ? SupplierProposalState.Answered
                                : SupplierProposalState.Evaluation,
-                        
-                        ProFormaStatus=!s.RFPProFormas.Any(a=>!a.IsDeleted)?ProFormaStatus.NotHaveProForma:ProFormaStatus.HaveProForma
+
+                        ProFormaStatus = !s.RFPProFormas.Any(a => !a.IsDeleted) ? ProFormaStatus.NotHaveProForma : ProFormaStatus.HaveProForma
 
                     }).ToListAsync();
                     return ServiceResultFactory.CreateSuccess(result);

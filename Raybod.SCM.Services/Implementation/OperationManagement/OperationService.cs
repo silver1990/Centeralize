@@ -43,7 +43,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<OperationAttachment> _operationAttachmentRepository;
         private readonly DbSet<Area> _areaRepository;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IWebHostEnvironment _hostingEnvironmentRoot;
         private readonly ITeamWorkAuthenticationService _authenticationService;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
@@ -55,13 +55,13 @@ namespace Raybod.SCM.Services.Implementation
             IWebHostEnvironment hostingEnvironmentRoot,
             IFileService fileService,
             IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationService,
             ISCMLogAndNotificationService scmLogAndNotificationService)
         {
             _unitOfWork = unitOfWork;
             _operationRepository = _unitOfWork.Set<Operation>();
             _areaRepository = _unitOfWork.Set<Area>();
-            _appSettings = appSettings.Value;
             _operationGroupRepository = _unitOfWork.Set<OperationGroup>();
             _operationStatusGroupRepository = _unitOfWork.Set<StatusOperation>();
             _operationProgressGroupRepository = _unitOfWork.Set<OperationProgress>();
@@ -74,6 +74,8 @@ namespace Raybod.SCM.Services.Implementation
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<OperationViewDto>>> AddOperationAsync(AuthenticateDto authenticate, int operationGroupId, List<AddOperationDto> model)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -28,25 +29,27 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<POSubject> _poSubjectRepository;
         private readonly DbSet<PO> _poRepository;
         private readonly DbSet<PoSupplierDocument> _poSupplierDocumentRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
 
         public POSupplierDocumentService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
            ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService
             )
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _poSupplierDocumentRepository = _unitOfWork.Set<PoSupplierDocument>();
             _pAttachmentRepository = _unitOfWork.Set<PAttachment>();
             _poSubjectRepository = _unitOfWork.Set<POSubject>();
             _poRepository = _unitOfWork.Set<PO>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<POSupplierDocumentDto>> AddPOSupplierDocumentAsync(AuthenticateDto authenticate, long poId, AddPOSupplierDocumentDto model)

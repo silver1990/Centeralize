@@ -45,7 +45,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<MasterMR> _masterMRRepository;
         private readonly DbSet<PurchaseRequest> _purchaseRequestRepository;
         private readonly DbSet<Contract> _contractRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public MrpService(
             IUnitOfWork unitOfWork,
@@ -54,6 +54,7 @@ namespace Raybod.SCM.Services.Implementation
             IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IMasterMrService masterMrService,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService)
         {
             _unitOfWork = unitOfWork;
@@ -70,7 +71,8 @@ namespace Raybod.SCM.Services.Implementation
             _contractRepository = _unitOfWork.Set<Contract>();
             _purchaseRequestRepository = _unitOfWork.Set<PurchaseRequest>();
             _productGroupRepository = _unitOfWork.Set<ProductGroup>();
-            _appSettings = appSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddMrpAsync(AuthenticateDto authenticate, string contractCode, int productGroupId, List<AddMrpItemDto> model)

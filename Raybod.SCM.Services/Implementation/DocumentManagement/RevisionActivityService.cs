@@ -1,5 +1,6 @@
 ﻿using Exon.TheWeb.Service.Core;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -33,23 +34,25 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public RevisionActivityService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService)
         {
             _unitOfWork = unitOfWork;
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _userRepository = _unitOfWork.Set<User>();
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _revisionActivityRepository = _unitOfWork.Set<RevisionActivity>();
             _activityTimesheetRepository = _unitOfWork.Set<RevisionActivityTimesheet>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         #region revision activity

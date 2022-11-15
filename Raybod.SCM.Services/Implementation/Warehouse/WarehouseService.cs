@@ -24,6 +24,7 @@ using Raybod.SCM.DataTransferObject.User;
 using Raybod.SCM.Domain.Struct;
 using Raybod.SCM.DataTransferObject.Audit;
 using Raybod.SCM.DataTransferObject.Notification;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -42,11 +43,12 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<WarehouseDespatch> _warehouseDespatchRepository;
         private readonly DbSet<WarehouseOutputRequestWorkFlow> _warehouseOutputRequestWorkFlowRepository;
         private readonly DbSet<User> _userRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public WarehouseService(
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings, IContractFormConfigService formConfigService, ISCMLogAndNotificationService scmLogAndNotificationService)
         {
@@ -60,9 +62,10 @@ namespace Raybod.SCM.Services.Implementation
             _warehouseOutputRequestWorkFlowRepository = _unitOfWork.Set<WarehouseOutputRequestWorkFlow>();
             _warehouseDespatchRepository = _unitOfWork.Set<WarehouseDespatch>();
             _productGroupRepository = _unitOfWork.Set<ProductGroup>();
-            _appSettings = appSettings.Value;
             _formConfigService = formConfigService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<BaseWarehouseDto>> AddWarehouseAsync(AuthenticateDto authenticate, AddWarehouseDto model)

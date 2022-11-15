@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -25,9 +26,9 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<FinancialAccount> _financialAccountRepository;
         private readonly DbSet<PO> _poRepository;
         private readonly DbSet<FinancialAccountBaseOnSupplier> _financialAccountBaseOnSupplierView;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
-        public FinancialAccountService(IUnitOfWork unitOfWork, ITeamWorkAuthenticationService authenticationService,
+        public FinancialAccountService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings)
         {
             _unitOfWork = unitOfWork;
@@ -35,7 +36,8 @@ namespace Raybod.SCM.Services.Implementation
             _poRepository = _unitOfWork.Set<PO>();
             _financialAccountRepository = _unitOfWork.Set<FinancialAccount>();
             _financialAccountBaseOnSupplierView = _unitOfWork.Query<FinancialAccountBaseOnSupplier>();
-            _appSettings = appSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<FinancialAccountBaseOnSupplier>>> GetFinancialAccountBaseONSupplierAsync()

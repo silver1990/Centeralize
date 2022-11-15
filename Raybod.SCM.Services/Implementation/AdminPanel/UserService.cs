@@ -26,6 +26,7 @@ using Hangfire;
 using Raybod.SCM.DataTransferObject.Customer;
 using Raybod.SCM.Utility.Extention;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -33,7 +34,7 @@ namespace Raybod.SCM.Services.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITeamWorkAuthenticationService _authenticationServices;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IAppEmailService _appEmailService;
         private readonly IContractService _contractService;
         private readonly DbSet<User> _usersRepository;
@@ -47,10 +48,10 @@ namespace Raybod.SCM.Services.Implementation
         private readonly IViewRenderService _viewRenderService;
         public UserService(IUnitOfWork unitOfWork, IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService teamWorkAuthenticationService, IViewRenderService viewRenderService, IAppEmailService appEmailService, IContractService contractService)
         {
             _unitOfWork = unitOfWork;
-            _appSettings = appSettings.Value;
             _authenticationServices = teamWorkAuthenticationService;
             _usersRepository = _unitOfWork.Set<User>();
             _teamWorkRepository = _unitOfWork.Set<TeamWork>();
@@ -63,6 +64,8 @@ namespace Raybod.SCM.Services.Implementation
             _viewRenderService = viewRenderService;
             _appEmailService = appEmailService;
             _contractService = contractService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<ListUserDto>> AddUserAsync(AuthenticateDto authenticate, AddUserDto model, int type)

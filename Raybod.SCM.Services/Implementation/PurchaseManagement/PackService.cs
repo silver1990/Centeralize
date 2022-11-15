@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -39,13 +40,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly IPOService _poServices;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public PackService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
             IPaymentService paymentService,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService,
             IPOService poServices)
@@ -54,7 +56,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _formConfigService = formConfigService;
-            _appSettings = appSettings.Value;
             _poRepository = _unitOfWork.Set<PO>();
             _poStatusLogRepository = _unitOfWork.Set<POStatusLog>();
             _qualityControlRepository = _unitOfWork.Set<QualityControl>();
@@ -63,6 +64,8 @@ namespace Raybod.SCM.Services.Implementation
             _packRepository = _unitOfWork.Set<Pack>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _poServices = poServices;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<WaitingPOSubjectDto>>> GetWaitingPoSubjectForAddPackingAsync(AuthenticateDto authenticate, long poId)

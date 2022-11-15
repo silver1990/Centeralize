@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
 using Raybod.SCM.DataAccess.Extention;
@@ -33,16 +34,16 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<User> _userRepository;
         private readonly DbSet<Consultant> _consultantRepository;
         private readonly ITeamWorkAuthenticationService _authenticationServices;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public DocumentCommunicationService(
             IUnitOfWork unitOfWork,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationServices)
         {
             _unitOfWork = unitOfWork;
             _authenticationServices = authenticationServices;
-            _appSettings = appSettings.Value;
             _contractRepository = _unitOfWork.Set<Contract>();
             _documentTQNCRRepository = _unitOfWork.Set<DocumentTQNCR>();
             _communicationRepository = _unitOfWork.Set<DocumentCommunication>();
@@ -50,6 +51,8 @@ namespace Raybod.SCM.Services.Implementation
             _userRepository = _unitOfWork.Set<User>();
             _supplierRepository = _unitOfWork.Set<Supplier>();
             _consultantRepository = _unitOfWork.Set<Consultant>();
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
 

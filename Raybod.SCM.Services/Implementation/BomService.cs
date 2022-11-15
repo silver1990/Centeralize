@@ -21,6 +21,7 @@ using Raybod.SCM.DataTransferObject.Notification;
 using Raybod.SCM.Domain.Struct;
 using Raybod.SCM.DataTransferObject.Mrp;
 using Raybod.SCM.DataTransferObject._PanelDocument.Area;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -35,13 +36,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<Product> _productRepository;
         private readonly DbSet<MasterMR> _masterMRRepository;
         private readonly DbSet<Contract> _contractRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
 
         public BomService(
             IUnitOfWork unitOfWork,
-            IOptions<CompanyAppSettingsDto> AppSettings,
+            IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService teamWorkAuthenticationService,
             IMasterMrService masterMrService)
         {
@@ -54,7 +56,8 @@ namespace Raybod.SCM.Services.Implementation
             _areaRepository = _unitOfWork.Set<Area>();
             _masterMRRepository = _unitOfWork.Set<MasterMR>();
             _contractRepository = _unitOfWork.Set<Contract>();
-            _appSettings = AppSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
        

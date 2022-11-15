@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Raybod.SCM.ModuleApi.Model
+namespace Raybod.SCM.DataTransferObject
 {
     [JsonObject("tokenManagement")]
     public class TokenManagement

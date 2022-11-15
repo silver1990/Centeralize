@@ -23,6 +23,7 @@ using Hangfire;
 using Raybod.SCM.DataTransferObject.Email;
 using Raybod.SCM.DataTransferObject.RFP;
 using Raybod.SCM.DataTransferObject.User;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -38,25 +39,27 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<RFPComment> _RFPCommentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
         public RFPCommentService(IUnitOfWork unitOfWork, IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _RFPSupplierRepository = _unitOfWork.Set<RFPSupplier>();
             _RFPCommentRepository = _unitOfWork.Set<RFPComment>();
             _RFPRepository = _unitOfWork.Set<RFP>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddRFPCommentAsync(AuthenticateDto authenticate,long rfpId, long rfpSupplierId, AddRFPCommentDto model)

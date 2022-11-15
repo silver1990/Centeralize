@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -30,20 +31,22 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<ProductGroup> _productGroupRepository;
         private readonly DbSet<CompanyUser> _companyUserRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         public SupplierService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService teamWorkAuthenticationService)
         {
             _unitOfWork = unitOfWork;
-            _appSettings = appSettings.Value;
             _authenticationService = teamWorkAuthenticationService;
             _companyUserRepository = _unitOfWork.Set<CompanyUser>();
             _productGroupRepository = _unitOfWork.Set<ProductGroup>();
             _proFormaRepository = _unitOfWork.Set<RFPProForma>();
             _supplierRepository = _unitOfWork.Set<Supplier>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<ListSupplierDto>> AddSupplierAsync(AuthenticateDto authenticate, AddSupplierDto model)

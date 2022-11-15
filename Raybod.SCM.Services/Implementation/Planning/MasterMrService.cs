@@ -16,6 +16,7 @@ using Raybod.SCM.DataTransferObject.MrpItem;
 using Raybod.SCM.Utility.Extention;
 using Raybod.SCM.DataTransferObject.Contract;
 using Raybod.SCM.DataTransferObject.Bom;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -27,12 +28,13 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<MasterMR> _masterMRRepository;
         private readonly DbSet<BomProduct> _bomRepository;
         private readonly DbSet<Contract> _contractRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
 
         public MasterMrService(
             IUnitOfWork unitOfWork,
-            IOptions<CompanyAppSettingsDto> AppSettings,
+            IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationService)
         {
             _unitOfWork = unitOfWork;
@@ -40,7 +42,8 @@ namespace Raybod.SCM.Services.Implementation
             _bomRepository = _unitOfWork.Set<BomProduct>();
             _masterMRRepository = _unitOfWork.Set<MasterMR>();
             _contractRepository = _unitOfWork.Set<Contract>();
-            _appSettings = AppSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         

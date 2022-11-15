@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using Raybod.SCM.DataTransferObject.Bom;
 using Raybod.SCM.DataTransferObject.Product;
 using Raybod.SCM.DataTransferObject.User;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -34,16 +35,16 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<User> _userRepository;
         private readonly DbSet<UserNotify> _notifyRepository;
         private readonly DbSet<TeamWorkUser> _teamworkUserRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
 
         public SCMLogAndNotificationService(IUnitOfWork unitOfWork,
             ITeamWorkAuthenticationService authenticationService,
+            IHttpContextAccessor httpContextAccessor,
              IOptions<CompanyAppSettingsDto> appSettings)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
-            _appSettings = appSettings.Value;
             _notificationRepository = _unitOfWork.Set<Notification>();
             _mentionNotificationRepository = _unitOfWork.Set<UserMentions>();
             _userRepository = _unitOfWork.Set<User>();
@@ -52,6 +53,8 @@ namespace Raybod.SCM.Services.Implementation
             _userSCMAuditLogsRepository = _unitOfWork.Set<UserSeenScmAuditLog>();
             _teamworkUserRepository = _unitOfWork.Set<TeamWorkUser>();
             _scmAuditLogsRepository = _unitOfWork.Set<SCMAuditLog>();
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
 
@@ -61,35 +64,13 @@ namespace Raybod.SCM.Services.Implementation
             {
                 var result = new AuditLogNotificationDto();
                 var permission = await _authenticationService.GetUserLogPermissionEntitiesAsync(authenticate.UserId, authenticate.ContractCode);
-                //if (permission.GlobalPermission.Count() == 0 && (user.UserType != (int)UserStatus.CustomerUser && user.UserType != (int)UserStatus.ConsultantUser))
-                //    return ServiceResultFactory.CreateSuccess<AuditLogNotificationDto>(null);
+
                 var dbQuery = _userSCMAuditLogsRepository
                     .AsNoTracking()
                     .Where(a => a.SCMAuditLog.BaseContractCode == authenticate.ContractCode && a.UserId == authenticate.UserId)
                     .AsQueryable();
 
-                //dbQuery = dbQuery
-                //    .Where(a => a.BaseContractCode == authenticate.ContractCode &&
-                //   (((permission.GlobalPermission != null && permission.GlobalPermission.Contains(a.NotifEvent)) ||
-                //   (a.UserPinAuditLogs != null && a.UserPinAuditLogs.Any(a => a.UserId == authenticate.UserId)) ||
-                //    (a.LogUserReceivers != null && a.LogUserReceivers.Any(c => c.UserId == authenticate.UserId))) ||
-                //    ((user.UserType == (int)UserStatus.CustomerUser || user.UserType == (int)UserStatus.ConsultantUser) &&
-                //    (a.NotifEvent == NotifEvent.AddComComment || a.NotifEvent == NotifEvent.ReplyComComment || a.NotifEvent == NotifEvent.AddTransmittal))
-                //    ));
 
-                //if (permission.DocumentGroupIds.Any())
-                //    dbQuery = dbQuery.Where(a => (a..DocumentGroupId == null || (a.LogUserReceivers != null && a.LogUserReceivers.Any(c => c.UserId == authenticate.UserId))) || (a.DocumentGroupId != null && permission.DocumentGroupIds.Contains(a.DocumentGroupId.Value)));
-
-                //if (permission.ProductGroupIds.Any())
-                //    dbQuery = dbQuery.Where(a => (a.ProductGroupId == null || (a.LogUserReceivers != null && a.LogUserReceivers.Any(c => c.UserId == authenticate.UserId))) || (a.ProductGroupId != null && permission.ProductGroupIds.Contains(a.ProductGroupId.Value)));
-
-                //if (!string.IsNullOrEmpty(query.SearchText))
-                //    dbQuery = dbQuery.Where(a =>
-                //     (a.FormCode != null && a.FormCode.Contains(query.SearchText)) ||
-                //     (a.Description != null && a.Description.Contains(query.SearchText)) ||
-                //     (a.Quantity != null && a.Quantity.Contains(query.SearchText)) ||
-                //     (a.Temp != null && a.Temp.Contains(query.SearchText)) ||
-                //     (a.Message != null && a.Message.Contains(query.SearchText)));
 
                 if (!string.IsNullOrEmpty(query.SearchText))
                 {

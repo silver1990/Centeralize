@@ -32,6 +32,7 @@ using Raybod.SCM.DataTransferObject.Consultant;
 using Raybod.SCM.DataTransferObject._PanelSale.Contract;
 using Raybod.SCM.DataTransferObject.Authentication;
 using Raybod.SCM.DataTransferObject.User;
+using Raybod.SCM.Services.Utilitys;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -40,40 +41,23 @@ namespace Raybod.SCM.Services.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITeamWorkAuthenticationService _authenticationService;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
-        private readonly IBomProductService _bomProductService;
-        private readonly IMasterMrService _masterMrService;
         private readonly IFileService _fileService;
         private readonly ITeamWorkAuthenticationService _authenticationServices;
-        private readonly DbSet<Domain.Model.Contract> _contractRepository;
-        private readonly DbSet<Area> _areaRepository;
-        private readonly DbSet<FileDriveDirectory> _fileDriveDirectoryRepository;
-        private readonly DbSet<Operation> _operationRepository;
-        private readonly DbSet<PDFTemplate> _pdfTemplateRepository;
+        private readonly DbSet<Contract> _contractRepository;
         private readonly DbSet<ContractFormConfig> _contractFormConfigRepository;
-        private readonly DbSet<DocumentGroup> _documentGroupRepository;
         private readonly DbSet<TeamWorkUser> _teamworkUserRepository;
         private readonly DbSet<UserLatestTeamWork> _latestTeamworkRepository;
         private readonly DbSet<TeamWorkUserRole> _teamworkUserRoleRepository;
-        private readonly DbSet<Domain.Model.ContractAttachment> _contractAttachmentRepository;
-        private readonly DbSet<Domain.Model.Document> _documentRepository;
-        private readonly DbSet<Domain.Model.PurchaseRequest> _purchaseRequest;
-        private readonly DbSet<Domain.Model.User> _usersRepository;
-        private readonly DbSet<Domain.Model.UserNotify> _notifyRepository;
-        private readonly DbSet<Domain.Model.Consultant> _consultantRepository;
+        private readonly DbSet<ContractAttachment> _contractAttachmentRepository;
+        private readonly DbSet<User> _usersRepository;
+        private readonly DbSet<Consultant> _consultantRepository;
         private readonly DbSet<TeamWork> _teamWorkRepository;
-        private readonly DbSet<Domain.Model.SCMAuditLog> _scmAuditLogRepository;
-        private readonly DbSet<Domain.Model.Payment> _paymentRepository;
-        private readonly DbSet<Domain.Model.MasterMR> _masterMrRepository;
-        private readonly DbSet<Domain.Model.PendingForPayment> _pendingForPaymentRepository;
-        private readonly DbSet<Domain.Model.PO> _poRepository;
-        private readonly DbSet<Domain.Model.RFP> _rfpRepository;
-        private readonly DbSet<Domain.Model.Transmittal> _transmittalRepository;
+        private readonly DbSet<SCMAuditLog> _scmAuditLogRepository;
+        private readonly DbSet<Transmittal> _transmittalRepository;
         private readonly DbSet<Customer> _customerRepository;
         private readonly DbSet<PlanService> _planServiceRepository;
-        private readonly DbSet<ProductGroup> _productGroupServiceRepository;
-        private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly FileHelper _fileHelper;
+        private readonly CompanyConfig _appSettings;
 
         public ContractService(
             IUnitOfWork unitOfWork,
@@ -83,45 +67,31 @@ namespace Raybod.SCM.Services.Implementation
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IBomProductService bomProductService,
             IMasterMrService masterMrService,
+            IHttpContextAccessor httpContextAccessor,
             IFileService fileService, ITeamWorkAuthenticationService authenticationServices)
         {
             _authenticationService = authenticationService;
             _fileService = fileService;
             _unitOfWork = unitOfWork;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _bomProductService = bomProductService;
-            _masterMrService = masterMrService;
-            _appSettings = appSettings.Value;
             _contractRepository = _unitOfWork.Set<Domain.Model.Contract>();
-            _areaRepository = _unitOfWork.Set<Area>();
-            _fileDriveDirectoryRepository = _unitOfWork.Set<FileDriveDirectory>();
-            _operationRepository = _unitOfWork.Set<Operation>();
-            _pdfTemplateRepository = _unitOfWork.Set<PDFTemplate>();
             _contractFormConfigRepository = _unitOfWork.Set<ContractFormConfig>();
-            _documentGroupRepository = _unitOfWork.Set<DocumentGroup>();
             _contractAttachmentRepository = _unitOfWork.Set<ContractAttachment>();
             _latestTeamworkRepository = _unitOfWork.Set<UserLatestTeamWork>();
-            _documentRepository = _unitOfWork.Set<Document>();
             _consultantRepository = _unitOfWork.Set<Consultant>();
             _teamworkUserRepository = _unitOfWork.Set<TeamWorkUser>();
             _usersRepository = _unitOfWork.Set<User>();
-            _notifyRepository = _unitOfWork.Set<UserNotify>();
             _planServiceRepository = _unitOfWork.Set<PlanService>();
             _teamworkUserRoleRepository = _unitOfWork.Set<TeamWorkUserRole>();
             _teamWorkRepository = _unitOfWork.Set<TeamWork>();
             _scmAuditLogRepository = _unitOfWork.Set<SCMAuditLog>();
             _customerRepository = _unitOfWork.Set<Customer>();
             _contractAttachmentRepository = _unitOfWork.Set<ContractAttachment>();
-            _purchaseRequest = _unitOfWork.Set<PurchaseRequest>();
-            _paymentRepository = _unitOfWork.Set<Payment>();
-            _masterMrRepository = _unitOfWork.Set<MasterMR>();
-            _pendingForPaymentRepository = _unitOfWork.Set<PendingForPayment>();
-            _poRepository = _unitOfWork.Set<PO>();
-            _rfpRepository = _unitOfWork.Set<RFP>();
-            _productGroupServiceRepository = _unitOfWork.Set<ProductGroup>();
             _transmittalRepository = _unitOfWork.Set<Transmittal>();
-            _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            _fileHelper = new FileHelper(hostingEnvironmentRoot);
             _authenticationServices = authenticationServices;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<UserInfoApiDto>> AddContractAsync(AuthenticateDto authenticate, InsertContractDto model)
@@ -1739,7 +1709,7 @@ namespace Raybod.SCM.Services.Implementation
 
                 foreach (var number in notifyNumber)
                 {
-                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Task && a.UserId == userId ))
+                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Task && a.UserId == userId))
                         addNotify.Add(new UserNotify
                         {
                             IsActive = true,
@@ -1757,7 +1727,7 @@ namespace Raybod.SCM.Services.Implementation
 
                 foreach (var number in notifyNumber)
                 {
-                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Event && a.UserId == userId ))
+                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Event && a.UserId == userId))
                         addNotify.Add(new UserNotify
                         {
                             IsActive = true,
@@ -1775,7 +1745,7 @@ namespace Raybod.SCM.Services.Implementation
                 var teamworks = await _teamWorkRepository.Where(a => !a.IsDeleted && !a.Contract.IsDeleted).ToListAsync();
                 foreach (var number in notifyNumber)
                 {
-                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Email && a.UserId == userId ))
+                    if (!addNotify.Any(a => a.IsOrganization && a.NotifyNumber == Convert.ToInt32(number) && a.NotifyType == NotifyManagementType.Email && a.UserId == userId))
                         addNotify.Add(new UserNotify
                         {
                             IsActive = true,
@@ -1783,7 +1753,7 @@ namespace Raybod.SCM.Services.Implementation
                             NotifyNumber = Convert.ToInt32(number),
                             NotifyType = NotifyManagementType.Email,
                             UserId = userId,
-                            SubModuleName=role.SubModuleName
+                            SubModuleName = role.SubModuleName
                         });
                 }
             }

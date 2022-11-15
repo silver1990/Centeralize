@@ -53,7 +53,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private string _contentRootPath;
 
         public DocumentService(IUnitOfWork unitOfWork,
@@ -61,13 +61,13 @@ namespace Raybod.SCM.Services.Implementation
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IBomProductService bomProductService, IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
             _bomProductService = bomProductService;
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _documentRepository = _unitOfWork.Set<Document>();
             _areaRepository = _unitOfWork.Set<Area>();
             _scmAuditLogsRepository = _unitOfWork.Set<SCMAuditLog>();
@@ -82,6 +82,8 @@ namespace Raybod.SCM.Services.Implementation
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _configuration = configuration;
             _contentRootPath = hostingEnvironmentRoot.ContentRootPath;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
 

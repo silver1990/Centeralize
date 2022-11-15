@@ -22,6 +22,7 @@ using Raybod.SCM.DataTransferObject.Audit;
 using Raybod.SCM.DataTransferObject._PanelDocument.Communication.Comment;
 using Hangfire;
 using Raybod.SCM.DataTransferObject.Email;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -36,13 +37,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<CommunicationTeamComment> _communicationTeamCommentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
         public CommunicationTeamCommentService(
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
@@ -50,13 +52,14 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _communicationTeamCommentRepository = _unitOfWork.Set<CommunicationTeamComment>();
             _documentCommunicationRepository = _unitOfWork.Set<DocumentCommunication>();
             _documentTQNCRRepository = _unitOfWork.Set<DocumentTQNCR>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddCommentAsync(AuthenticateDto authenticate,

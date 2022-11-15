@@ -20,6 +20,7 @@ using Raybod.SCM.Utility.EnumType;
 using Raybod.SCM.DataTransferObject.Audit;
 using Microsoft.AspNetCore.Hosting;
 using Raybod.SCM.DataTransferObject.PO;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -39,13 +40,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<ReceiptReject> _receiptRejectRepository;
         private readonly DbSet<WarehouseDespatch> _warehouseDespatchRepository;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public InvoiceService(
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IPaymentService paymentService,
+            IHttpContextAccessor httpContextAccessor,
             IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService)
@@ -64,7 +66,8 @@ namespace Raybod.SCM.Services.Implementation
             _poRepository = _unitOfWork.Set<PO>();
             _receiptRejectRepository = _unitOfWork.Set<ReceiptReject>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
-            _appSettings = appSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<WaitingReceiptAndForInvoiceListDto>>> GetWaitingReceiptOrReceiptRejectForInvoiceAsync(AuthenticateDto authenticate, WaitingForInvoiceQueryDto query)

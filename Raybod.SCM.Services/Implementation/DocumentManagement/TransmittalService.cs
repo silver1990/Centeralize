@@ -37,6 +37,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.IO.Compression;
 using Raybod.SCM.DataTransferObject.User;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -62,7 +63,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
         private readonly IConfiguration _configuration;
         private string _contentRootPath;
@@ -75,6 +76,7 @@ namespace Raybod.SCM.Services.Implementation
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
             IConverter converter,
+            IHttpContextAccessor httpContextAccessor,
             IContractFormConfigService formConfigService,
             IViewRenderService viewRenderService, IConfiguration configuration
             )
@@ -86,7 +88,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _formConfigService = formConfigService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _documentRepository = _unitOfWork.Set<Document>();
             _customerRepository = _unitOfWork.Set<Customer>();
             _consultantRepository = _unitOfWork.Set<Consultant>();
@@ -104,6 +105,8 @@ namespace Raybod.SCM.Services.Implementation
             _viewRenderService = viewRenderService;
             _configuration = configuration;
             _contentRootPath = hostingEnvironmentRoot.ContentRootPath;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<TransmittalCompanyListDto>>> GetTransmittalCompanyListAsync(AuthenticateDto authenticate)

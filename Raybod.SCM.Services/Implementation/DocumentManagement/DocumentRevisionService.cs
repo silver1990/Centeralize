@@ -45,13 +45,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IWebHostEnvironment _hostingEnvironmentRoot;
 
         public DocumentRevisionService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IFileService fileService,
             IContractFormConfigService formConfigService)
@@ -61,7 +62,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _formConfigService = formConfigService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _documentRepository = _unitOfWork.Set<Document>();
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _transmittalRepository = _unitOfWork.Set<Transmittal>();
@@ -69,6 +69,8 @@ namespace Raybod.SCM.Services.Implementation
             _revisionAttachmentRepository = _unitOfWork.Set<RevisionAttachment>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _hostingEnvironmentRoot = hostingEnvironmentRoot;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<RevisionDashboardBadgeDto> GetRevisionDashboardBadgeAsync(AuthenticateDto authenticate)

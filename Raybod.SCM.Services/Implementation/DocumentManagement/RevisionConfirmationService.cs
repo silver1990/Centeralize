@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using Hangfire;
 using Raybod.SCM.DataTransferObject.Email;
 using Raybod.SCM.DataTransferObject._PanelDocument.Communication.Comment;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -44,7 +45,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly ISCMLogAndNotificationService _scmLogAndNotificationService;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IAppEmailService _appEmailService;
         private readonly IViewRenderService _viewRenderService;
 
@@ -54,13 +55,13 @@ namespace Raybod.SCM.Services.Implementation
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IFileService fileService, IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
             _fileService = fileService;
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
-            _appSettings = appSettings.Value;
             _userRepository = _unitOfWork.Set<User>();
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _confirmationWorkFlowRepository = _unitOfWork.Set<ConfirmationWorkFlow>();
@@ -70,6 +71,8 @@ namespace Raybod.SCM.Services.Implementation
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _appEmailService = appEmailService;
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<UserMentionDto>>> GetConfirmationUserListAsync(AuthenticateDto authenticate, long revisionId)

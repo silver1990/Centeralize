@@ -31,9 +31,10 @@ namespace Raybod.SCM.ModuleApi.Controllers
         private readonly ITeamWorkService _teamWorkService;
         private readonly IUserService _userService;
         private readonly ILogger<SigninServiceController> _logger;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSetting;
         private readonly IFileDriveFileService _fileDriveFileService;
         private readonly IWebHostEnvironment _hostingEnvironmentRoot;
+ 
 
         public SigninServiceController(
             IAuthenticate authenticate,
@@ -45,7 +46,8 @@ namespace Raybod.SCM.ModuleApi.Controllers
             _authenticate = authenticate;
             _logger = logger;
             _teamWorkService = teamWorkService;
-            _appSettings = appSettings.Value;
+           httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSetting = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
             _fileDriveFileService = fileDriveFileService;
 
 
@@ -139,7 +141,7 @@ namespace Raybod.SCM.ModuleApi.Controllers
         public async Task<object> GetCompanyName()
         {
             var authenticate = HttpContextHelper.GetLanguageWithoutAuthenticateInfo(HttpContext);
-            var config = _appSettings.CompanyConfig.First(a => a.CompanyCode == authenticate.CompanyCode);
+            var config = _appSetting;
             return ServiceResultFactory.CreateSuccess(new { CompanyNameFA= config.CompanyNameFA, CompanyNameEN = config.CompanyNameEN });
         }
         [HttpPost]

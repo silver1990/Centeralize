@@ -24,6 +24,7 @@ using Raybod.SCM.Utility.Utility;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -48,10 +49,11 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<WarehouseProduct> _warehouseProductRepository;
         private readonly DbSet<Area> _areaRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         public ProductService(IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationServices, IContractFormConfigService formConfigService, IMasterMrReportService masterMrReportService)
         {
             _unitOfWork = unitOfWork;
@@ -73,7 +75,8 @@ namespace Raybod.SCM.Services.Implementation
             _areaRepository = _unitOfWork.Set<Area>();
             _formConfigService = formConfigService;
             _masterMrReportService = masterMrReportService;
-            _appSettings = appSettings.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         #region product unit

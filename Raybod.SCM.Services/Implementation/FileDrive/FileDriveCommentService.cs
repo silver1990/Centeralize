@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -38,7 +39,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<FileDriveCommentAttachment> _filedriveCommentAttachmentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
         public FileDriveCommentService(
             IUnitOfWork unitOfWork,
@@ -46,13 +47,13 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _filedriveFileRepository = _unitOfWork.Set<FileDriveFile>();
             _filedriveCommentRepository = _unitOfWork.Set<FileDriveComment>();
@@ -60,6 +61,8 @@ namespace Raybod.SCM.Services.Implementation
             _filedriveCommentAttachmentRepository = _unitOfWork.Set<FileDriveCommentAttachment>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
         public async Task<ServiceResult<string>> AddFileDriveCommentAsync(AuthenticateDto authenticate, Guid fileId, AddFileDriveCommentDto model)
         {

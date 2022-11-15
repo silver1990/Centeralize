@@ -15,13 +15,11 @@ using Raybod.SCM.ModuleApi.Helper.Authentication;
 using Raybod.SCM.Services.Core;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Raybod.SCM.Utility.Filters;
-using Raybod.SCM.ModuleApi.Model;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using Raybod.SCM.DataTransferObject;
 using System;
 using System.Threading.Tasks;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.AspNetCore.Http.Features;
 using Raybod.SCM.Services.Utilitys.MailService;
 using NETCore.MailKit.Extensions;
@@ -31,7 +29,6 @@ using EFSecondLevelCache.Core;
 using CacheManager.Core;
 using Newtonsoft.Json;
 using Microsoft.OpenApi.Any;
-using System.Net.Http;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using System.Runtime.Loader;
@@ -40,26 +37,21 @@ using DinkToPdf;
 using Hangfire;
 using Hangfire.SqlServer;
 using Raybod.SCM.Services.Implementation;
-
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Raybod.SCM.Utility.Utility;
-using System.Text.Json;
 using Raybod.SCM.Services.Utilitys.Raybod.SCM.Services.Core;
 using Microsoft.AspNetCore.Http;
-
-//using Raybod.SCM.Services.Core.DocumentManagement;
-//using Raybod.SCM.Services.Implementation.DocumentManagement;
 
 namespace Raybod.SCM.ModuleApi
 {
     public class Startup
     {
         private readonly string _contentRootPath;
-
+  
+        
         public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             _contentRootPath = env.ContentRootPath;
             Configuration = configuration;
+
         }
 
         public IConfiguration Configuration { get; set; }
@@ -100,15 +92,6 @@ namespace Raybod.SCM.ModuleApi
             services.AddHangfireServer();
             services.AddControllers()
                 .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-
-            //services.AddMvcCore()
-            //         .AddApiExplorer();
-            //            services.AddDistributedRedisCache(options =>
-            //            {
-            //                options.Configuration = "localhost:6379";
-            //                options.InstanceName = "masterScm";
-            //            });
-
             services.AddEFSecondLevelCache();
             addInMemoryCacheServiceProvider(services);
 
@@ -192,21 +175,7 @@ namespace Raybod.SCM.ModuleApi
                                                             }
                                                           });
                 c.OperationFilter<DefaultHeaderFilter>();
-                //c.AddSecurityDefinition("Bearer", new ApiKeyScheme()
-                //{
-                //    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                //    Name = "Authorization",
-                //    In = "header",
-                //    Type = "apiKey"
-                //});
-                // c.AddSecurityDefinition("Bearer",
-                //new OpenApiSecurityScheme
-                //{
-                //    In = ParameterLocation.Header,
-                //    Description = "The Bearer Token needed for Authorizing requests",
-                //    Name = "",
-                //    Type = SecuritySchemeType.ApiKey
-                //});
+               
 
                 c.DocInclusionPredicate((docName, apiDesc) =>
                 {
@@ -225,9 +194,24 @@ namespace Raybod.SCM.ModuleApi
 
           );
 
+            var serviceProvider = services.BuildServiceProvider();
+            var companyCodeHeader = serviceProvider.GetService<IHttpContextAccessor>()?.HttpContext?.Request?.Headers["CompanyCode"].ToString();
+       
+            
+            byte[] secret =new byte[4096];
             services.Configure<TokenManagement>(Configuration.GetSection("tokenManagement"));
-            var token = Configuration.GetSection("tokenManagement").Get<TokenManagement>();
-            var secret = Encoding.ASCII.GetBytes(token.Secret);
+            if (!String.IsNullOrEmpty(companyCodeHeader))
+            {
+              
+                
+                if(!String.IsNullOrEmpty(companyCodeHeader))
+                {
+                    var companyConfig = Configuration.GetSection("CompanyAppSetting").Get<CompanyAppSettingsDto>();
+                    var token = companyConfig.CompanyConfig.First(a => a.CompanyCode == companyCodeHeader).TokenManagement;
+                    secret = Encoding.ASCII.GetBytes(token.Secret);
+                }
+            }
+           
             // IdentityModelEventSource.ShowPII = true;
             services.AddAuthentication(options =>
             {
@@ -239,6 +223,7 @@ namespace Raybod.SCM.ModuleApi
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    
                     ValidateAudience = false,
                     ValidateIssuer = false,
                     ValidateIssuerSigningKey = true,

@@ -24,6 +24,7 @@ using Raybod.SCM.DataTransferObject.Notification;
 using Raybod.SCM.DataTransferObject.User;
 using Raybod.SCM.DataTransferObject._panelPurchase.PurchaseRequestConfirmation;
 using Hangfire;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -44,7 +45,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<MrpItem> _mrpPlanningRepository;
         private readonly DbSet<Contract> _contractRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public PurchaseRequestService(
             IUnitOfWork unitOfWork,
@@ -52,6 +53,7 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationService,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService,
+            IHttpContextAccessor httpContextAccessor,
         IOptions<CompanyAppSettingsDto> appSettings)
         {
             _unitOfWork = unitOfWork;
@@ -68,8 +70,9 @@ namespace Raybod.SCM.Services.Implementation
             _contractRepository = _unitOfWork.Set<Contract>();
             _productGroupRepository = _unitOfWork.Set<ProductGroup>();
             _userRepository = _unitOfWork.Set<User>();
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<PRWaitingListBadgeCountDto> GetDashbourdWaitingListBadgeCountAsync(AuthenticateDto authenticate)

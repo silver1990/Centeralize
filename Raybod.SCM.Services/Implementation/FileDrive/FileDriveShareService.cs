@@ -30,12 +30,13 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<FileDriveFile> _fileRepository;
         private readonly DbSet<User> _userRepository;
         private readonly ITeamWorkAuthenticationService _authenticationService;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly Utilitys.FileHelper _fileHelper;
         private readonly IWebHostEnvironment _hostingEnvironmentRoot;
         public FileDriveShareService(IUnitOfWork unitOfWork,
             ITeamWorkAuthenticationService authenticationService,
-            IOptions<CompanyAppSettingsDto> AppSettings,
+            IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             IWebHostEnvironment hostingEnvironmentRoot)
         {
             _unitOfWork = unitOfWork;
@@ -44,9 +45,10 @@ namespace Raybod.SCM.Services.Implementation
             _fileRepository = _unitOfWork.Set<FileDriveFile>();
             _userRepository = _unitOfWork.Set<User>();
             _authenticationService = authenticationService;
-            _appSettings = AppSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _hostingEnvironmentRoot = hostingEnvironmentRoot;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
 

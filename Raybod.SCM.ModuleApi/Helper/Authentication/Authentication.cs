@@ -12,7 +12,9 @@ using Raybod.SCM.DataTransferObject.User;
 using Raybod.SCM.ModuleApi.Model;
 using Raybod.SCM.Services.Core;
 using Raybod.SCM.Services.Core.Common;
+using Raybod.SCM.DataTransferObject;
 using Raybod.SCM.Services.Core.Common.Message;
+using System.Linq;
 
 namespace Raybod.SCM.ModuleApi.Helper.Authentication
 {
@@ -20,12 +22,15 @@ namespace Raybod.SCM.ModuleApi.Helper.Authentication
     {
         private readonly IUserService _userService;
         private readonly TokenManagement _tokenManagement;
+        private readonly CompanyConfig _appSetting;
 
         //IHostingEnvironment hostingEnvironmentRoot
-        public Authentication(IUserService userService, IOptions<TokenManagement> tokenManagement)
+        public Authentication(IUserService userService, IHttpContextAccessor httpContextAccessor, IOptions<CompanyAppSettingsDto> appSettings)
         {
             _userService = userService;
-            _tokenManagement = tokenManagement.Value;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSetting = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
+            _tokenManagement = _appSetting.TokenManagement;
         }
 
         public async Task<object> IsAuthenticatedAsync(SigningApiDto request,string language)

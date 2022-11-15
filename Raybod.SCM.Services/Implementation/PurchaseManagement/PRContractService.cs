@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Options;
@@ -51,7 +52,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<ProductGroup> _productGroupRepository;
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public PRContractService(
             IUnitOfWork unitOfWork,
@@ -59,6 +60,7 @@ namespace Raybod.SCM.Services.Implementation
             IOptions<CompanyAppSettingsDto> appSettings,
             ITeamWorkAuthenticationService authenticationServices,
             IPOService poService,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService)
         {
@@ -67,7 +69,6 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _formConfigService = formConfigService;
-            _appSettings = appSettings.Value;
             _poTermsOfPaymentRepository = _unitOfWork.Set<POTermsOfPayment>();
             _prContractWorkFlowRepository = _unitOfWork.Set<PrContractConfirmationWorkFlow>();
             _prContractRepository = _unitOfWork.Set<PRContract>();
@@ -83,6 +84,8 @@ namespace Raybod.SCM.Services.Implementation
             _productGroupRepository = _unitOfWork.Set<ProductGroup>();
             _poSubjectRepository = _unitOfWork.Set<POSubject>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddPRContractAsync(AuthenticateDto authenticate, AddPRContractDto model)

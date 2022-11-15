@@ -22,6 +22,7 @@ using Raybod.SCM.DataTransferObject.User;
 using Raybod.SCM.DataTransferObject._PanelDocument.Communication.Comment;
 using Hangfire;
 using Raybod.SCM.DataTransferObject.Email;
+using Microsoft.AspNetCore.Http;
 
 namespace Raybod.SCM.Services.Implementation
 {
@@ -36,7 +37,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<RevisionAttachment> _revisionAttachmentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public RevisionCommentService(
@@ -45,19 +46,21 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _revisionCommentRepository = _unitOfWork.Set<RevisionComment>();
             _documentRevisionRepository = _unitOfWork.Set<DocumentRevision>();
             _revisionAttachmentRepository = _unitOfWork.Set<RevisionAttachment>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<string>> AddRevisionCommentAsync(AuthenticateDto authenticate,

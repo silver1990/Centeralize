@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -39,7 +40,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<OperationAttachment> _operationAttachmentRepository;
         private readonly DbSet<User> _userRepository;
         private readonly Raybod.SCM.Services.Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
         private readonly IViewRenderService _viewRenderService;
 
         public OperationCommentService(
@@ -47,6 +48,7 @@ namespace Raybod.SCM.Services.Implementation
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IAppEmailService appEmailService, IViewRenderService viewRenderService)
         {
@@ -54,13 +56,14 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationService = authenticationService;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _appEmailService = appEmailService;
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
             _operationCommentRepository = _unitOfWork.Set<OperationComment>();
             _operationRepository = _unitOfWork.Set<Operation>();
             _operationAttachmentRepository = _unitOfWork.Set<OperationAttachment>();
             _userRepository = _unitOfWork.Set<User>();
             _viewRenderService = viewRenderService;
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
         public async Task<ServiceResult<string>> AddOperationCommentAsync(AuthenticateDto authenticate, Guid operationId, AddOperationCommentDto model)
         {

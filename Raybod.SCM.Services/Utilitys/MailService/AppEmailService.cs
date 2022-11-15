@@ -154,12 +154,12 @@ namespace Raybod.SCM.Services.Utilitys.MailService
         {
             try
             {
-                var CCs = _appSettings.ReportExceptionEmailCC;
+                var CCs = new List<string>();
                 string message = $"ارسال ایمیل به آدرس {emailAddress} با خطا مواجه شد";
-                CommentMentionNotif emaiBody = new CommentMentionNotif(message, null, new List<CommentNotifViaEmailDTO>(), _appSettings.CompanyName);
+                CommentMentionNotif emaiBody = new CommentMentionNotif(message, null, new List<CommentNotifViaEmailDTO>(), "Raybod");
                 var emailRequest = new SendEmailDto
                 {
-                    To = _appSettings.ReportExceptionEmailTo,
+                    To = "heidar.kakaei@raybodravesh.com",
                     Body = await _viewRenderService.RenderToStringAsync("_TransmittlaNotifEmailFree", emaiBody),
                     Subject = "Email Exception",
                     CCs=CCs
@@ -175,12 +175,12 @@ namespace Raybod.SCM.Services.Utilitys.MailService
         {
             try
             {
-                var CCs = _appSettings.ReportExceptionEmailCC;
+                var CCs = new List<string>();
                 string message = $"ارسال ایمیل {emailsubbjec} به دلیل حجم غیر مجاز با خطا مواجه شد";
-                CommentMentionNotif emaiBody = new CommentMentionNotif(message, null, new List<CommentNotifViaEmailDTO>(), _appSettings.CompanyName);
+                CommentMentionNotif emaiBody = new CommentMentionNotif(message, null, new List<CommentNotifViaEmailDTO>(), "Raybod");
                 var emailRequest = new SendEmailDto
                 {
-                    To = _appSettings.ReportExceptionEmailTo,
+                    To = "heidar.kakaei@raybodravesh.com",
                     Body = await _viewRenderService.RenderToStringAsync("_TransmittlaNotifEmailFree", emaiBody),
                     Subject = "Email Exception",
                     CCs = CCs

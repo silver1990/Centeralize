@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -48,15 +49,15 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<UserNotify> _notifyRepository;
         private readonly DbSet<FileDriveShare> _shareRepository;
         private readonly DbSet<UserLatestTeamWork> _latestTeamworkRepository;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public TeamWorkService(IUnitOfWork unitOfWork,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ITeamWorkAuthenticationService authenticationService)
         {
             _unitOfWork = unitOfWork;
             _authenticationService = authenticationService;
-            _appSettings = appSettings.Value;
             _teamWorkRepository = _unitOfWork.Set<TeamWork>();
             _teamWorkUserRepository = _unitOfWork.Set<TeamWorkUser>();
             _teamWorkUserProductGroupRepository = _unitOfWork.Set<TeamWorkUserProductGroup>();
@@ -75,6 +76,8 @@ namespace Raybod.SCM.Services.Implementation
             _roleRepository = _unitOfWork.Set<Role>();
             _userRepository = _unitOfWork.Set<User>();
             _shareRepository = _unitOfWork.Set<FileDriveShare>();
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         #region teamWork service

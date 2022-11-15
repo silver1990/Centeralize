@@ -33,7 +33,7 @@ namespace Raybod.SCM.Services.Implementation
         private readonly ITeamWorkAuthenticationService _authenticationServices;
         private readonly Utilitys.FileHelper _fileHelper;
         private readonly IFileService _fileService;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public LogisticService(
             IUnitOfWork unitOfWork,
@@ -42,6 +42,7 @@ namespace Raybod.SCM.Services.Implementation
             ITeamWorkAuthenticationService authenticationServices,
             IPaymentService paymentService,
             ISCMLogAndNotificationService scmLogAndNotificationService,
+            IHttpContextAccessor httpContextAccessor,
             IFileService fileService
             )
         {
@@ -49,12 +50,13 @@ namespace Raybod.SCM.Services.Implementation
             _authenticationServices = authenticationServices;
             _scmLogAndNotificationService = scmLogAndNotificationService;
             _fileService = fileService;
-            _appSettings = appSettings.Value;
             _poStatusLogRepository = _unitOfWork.Set<POStatusLog>();
             _pAttachmentRepository = _unitOfWork.Set<PAttachment>();
             _packRepository = _unitOfWork.Set<Pack>();
             _logisticRepository = _unitOfWork.Set<Logistic>();
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
         public async Task<ServiceResult<List<PackLogisticListDto>>> GetPoPackLogisticAsync(AuthenticateDto authenticate, long poId)

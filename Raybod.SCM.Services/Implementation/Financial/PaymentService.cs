@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Raybod.SCM.DataAccess.Core;
@@ -41,13 +42,14 @@ namespace Raybod.SCM.Services.Implementation
         private readonly DbSet<User> _userRepository;
         private readonly DbSet<PendingForPayment> _pendingForPaymentRepository;
         private readonly Utilitys.FileHelper _fileHelper;
-        private readonly CompanyAppSettingsDto _appSettings;
+        private readonly CompanyConfig _appSettings;
 
         public PaymentService(
             IUnitOfWork unitOfWork,
             IWebHostEnvironment hostingEnvironmentRoot,
             ITeamWorkAuthenticationService authenticationService,
             IOptions<CompanyAppSettingsDto> appSettings,
+            IHttpContextAccessor httpContextAccessor,
             ISCMLogAndNotificationService scmLogAndNotificationService,
             IContractFormConfigService formConfigService)
         {
@@ -62,70 +64,14 @@ namespace Raybod.SCM.Services.Implementation
             _paymentConfirmRepository = _unitOfWork.Set<PaymentConfirmationWorkFlow>();
             _financialAccountRepository = _unitOfWork.Set<FinancialAccount>();
             _poTermsOfPaymentRepository = _unitOfWork.Set<POTermsOfPayment>();
-            _appSettings = appSettings.Value;
             _fileHelper = new Utilitys.FileHelper(hostingEnvironmentRoot);
+            httpContextAccessor.HttpContext.Request.Headers.TryGetValue("companyCode", out var CompanyCode);
+            _appSettings = appSettings.Value.CompanyConfig.First(a => a.CompanyCode == CompanyCode);
         }
 
 
 
-        //public async Task<ServiceResult<bool>> AddPendingToPaymentBaseOnTermsOfPaymentExceptInvoice(List<PO> poModels, TermsOfPaymentStep paymentStep)
-        //{
-        //    try
-        //    {
-        //        var pendigToPaymentModels = new List<PendingForPayment>();
-        //        foreach (var poObject in poModels)
-        //        {
-
-        //            if (await _pendingForPaymentRepository.AnyAsync(a => a.POId == poObject.POId && (a.POTermsOfPayment != null && a.POTermsOfPayment.PaymentStep == paymentStep)))
-        //                return ServiceResultFactory.CreateError(false, MessageId.ThisStateSetBefore);
-
-        //            var poTermsOfPaymentStep = await _poTermsOfPaymentRepository
-        //                .Where(a => a.POId == poObject.POId && a.PaymentStep == paymentStep)
-        //                .FirstOrDefaultAsync();
-
-        //            if (poTermsOfPaymentStep == null)
-        //                return ServiceResultFactory.CreateSuccess(true);
-
-        //            var amount = (poTermsOfPaymentStep.PaymentPercentage * poObject.TotalAmount) / 100;
-        //            var datePayment = DateTime.UtcNow;
-
-        //            if (poTermsOfPaymentStep.IsCreditPayment)
-        //                datePayment.AddDays(poTermsOfPaymentStep.CreditDuration);
-
-        //            var pendigToPaymentModel = new PendingForPayment
-        //            {
-        //                Amount = amount,
-        //                AmountPayed = 0,
-        //                AmountRemained = amount,
-        //                PaymentDateTime = datePayment,
-        //                PRContractId = poObject.PRContractId,
-        //                POId = poObject.POId,
-        //                POTermsOfPaymentId = poTermsOfPaymentStep.Id,
-        //                SupplierId = poObject.SupplierId,
-        //                Status = POPaymentStatus.NotSettled,
-        //                BaseContractCode = poObject.BaseContractCode
-        //            };
-        //            pendigToPaymentModels.Add(pendigToPaymentModel);
-
-        //        }
-        //        var count = await _pendingForPaymentRepository.CountAsync();
-        //        count -= 1;
-        //        foreach (var item in pendigToPaymentModels)
-        //        {
-        //            count += 1;
-        //            item.PendingForPaymentNumber = CodeGenerator.SCMFormCodeGenerator(count, SCMForm.PendingToPayment);
-        //        }
-        //        _pendingForPaymentRepository.AddRange(pendigToPaymentModels);
-        //        return await _unitOfWork.SaveChangesAsync() > 0
-        //            ? ServiceResultFactory.CreateSuccess(true)
-        //            : ServiceResultFactory.CreateError(false, MessageId.SaveFailed);
-
-        //    }
-        //    catch (Exception exception)
-        //    {
-        //        return ServiceResultFactory.CreateException(false, exception);
-        //    }
-        //}
+      
 
         public async Task<ServiceResult<bool>> AddPendingToPaymentBaseOnTermsOfPaymentOfInvoice(AuthenticateDto authenticate, PO poModel, long invoiceId, decimal amount)
         {
